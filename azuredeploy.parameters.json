@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "teststorageType": {
+      "value": "Standard_LRS"
+    },
+    "testvmName": {
+      "value": "testvm"
+    },
+    "AdminUserName": {
+      "value": "testuser"
+    },
+    "AdminPassword": {
+      "value": "AweS0me@PW12"
+    },
+    "jumpboxnicName": {
+      "value": "jumpboxnic"
+    },
+    "jumpboxipDnsName": {
+      "value": "jumpboxip"
+    },
+    "jumpboxvmName": {
+      "value": "jumpbox"
+    },
+    "jumpboxvmpipDnsName": {
+      "value": "jumpboxvmpip"
+    },
+    "applicationGatewayName": {
+      "value": "appgw"
+    },
+    "tier": {
+      "value": "basic"
+    },
+    "skuSize": {
+      "value": "small"
+    },
+    "capacity": {
+      "value":  2
+    },
+    "frontEndPort": {
+      "value": 80
+    },
+    "publicIpAddressName": {
+      "value": "gatewaypip"
+    }
+  }
+}
