@@ -2,6 +2,7 @@
 # provision new drive
 # attach to /var
 id > /tmp/whoami.out
+exit
 apt-get -y update
 parted -s -a optimal /dev/sdc mkpart primary
 #parted mounts the drive at /mnt by default
