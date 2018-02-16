@@ -1,14 +1,10 @@
 # Custom Script for Linux
 # provision new drive
 # attach to /var
-id > /tmp/whoami.out
-exit
 apt-get -y update
-parted -s -a optimal /dev/sdc mkpart primary
+parted -s -a optimal /dev/sdc mklabel msdos
+parted -s -a optimal /dev/sdc mkpart primary ext4 0% 100%
 #parted mounts the drive at /mnt by default
-umount /dev/sdc1
-mkfs -t ext4 /dev/sdc1
-mount /dev/sdc1 /mnt
 cd /var
 rsync -aqxP /var/* /mnt
 cd /
@@ -20,3 +16,4 @@ cat > /etc/fstab <<EOF
 /dev/sdc1       /var     ext4    defaults    0 0
 EOF
 apt-get -y install apache2
+
