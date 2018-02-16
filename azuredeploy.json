@@ -61,45 +61,8 @@
     "applicationGatewayName": {
       "type": "string"
     },
-    "tier": {
-      "type": "string"
-    },
-    "skuSize": {
-      "type": "string"
-    },
-    "capacity": {
-      "type": "int",
-      "allowedValues": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10
-      ],
-      "defaultValue": 2
-    },
-    "frontEndPort": {
-      "type": "int"
-    },
     "publicIpAddressName": {
       "type": "string"
-    },
-    "_artifactsLocation": {
-      "type": "string",
-      "metadata": {
-        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
-      }
-    },
-    "_artifactsLocationSasToken": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Auto-generated token to access _artifactsLocation"
-      }
     }
   },
   "variables": {
@@ -109,6 +72,8 @@
     "testnetworkSubnet1Prefix": "10.0.0.0/24",
     "testnetworkSubnet2Name": "Subnet-2",
     "testnetworkSubnet2Prefix": "10.0.1.0/24",
+    "testnetworkSubnet2Name": "Subnet-3",
+    "testnetworkSubnet2Prefix": "10.0.2.0/24",
     "testvmImagePublisher": "Canonical",
     "testvmImageOffer": "UbuntuServer",
     "testvmOSDiskName": "testvmOSDisk",
@@ -125,7 +90,8 @@
     "jumpboxvmOSDiskName": "jumpboxvmOSDisk",
     "jumpboxvmVmSize": "Standard_D2_v2",
     "jumpboxvmVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'testnetwork')]",
-    "jumpboxvmSubnetRef": "[concat(variables('jumpboxvmVnetID'), '/subnets/', variables('testnetworkSubnet1Name'))]",
+      "jumpboxvmSubnetRef": "[concat(variables('jumpboxvmVnetID'), '/subnets/', variables('testnetworkSubnet1Name'))]",
+    "gatewaySubnetRef": "[concat(resourceId('Microsoft.Network/virtualNetworks', 'testnetwork'), '/subnets/Subnet-3')]",      
     "jumpboxvmStorageAccountContainerName": "vhds",
     "jumpboxvmNicName": "[concat(parameters('jumpboxvmName'), 'NetworkInterface')]",
     "jumpboxvmpipName": "jumpboxvmpip",
@@ -134,8 +100,9 @@
     "vnetId": "[resourceId('Microsoft.Network/virtualNetworks', 'testnetwork')]",
     "publicIPRef": "[resourceId('Microsoft.Network/publicIPAddresses/', parameters('publicIpAddressName'))]",
     "subnetRef": "[concat(variables('jumpboxvmVnetID'), '/subnets/', variables('testnetworkSubnet1Name'))]",
-    "applicationGatewayID": "[resourceId('Microsoft.Network/applicationGateways', parameters('applicationGatewayName'))]",
-  },
+    "applicationGatewayID": "[resourceId('Microsoft.Network/applicationGateways', parameters('applicationGatewayName'))]"
+  
+},
     "resources": [
       {
         "name": "[variables('teststorageName')]",
@@ -242,7 +209,19 @@
               },
               "caching": "ReadWrite",
               "createOption": "FromImage"
-            }
+            },
+            "dataDisks": [
+              {
+                "lun": 0,
+                "name": "[concat(parameters('testvmName'),'-datadisk')]",
+                "createOption": "Empty",
+                "vhd": {
+                  "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', variables('teststorageName')), '2016-01-01').primaryEndpoints.blob, variables('testvmStorageAccountContainerName'), '/', variables('testvmOSDiskName'),'data' ,'.vhd')]"
+                },
+                "caching": "None",
+                "diskSizeGB": "1023"
+              }
+            ]
           },
           "networkProfile": {
             "networkInterfaces": [
@@ -250,22 +229,6 @@
                 "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('testvmNicName'))]"
               }
             ]
-          },
-          {
-            "type": "Microsoft.Compute/disks",
-            "name": "[concat(parameters('testvmName'),'-data')]",
-            "apiVersion": "2015-06-15",
-            "location": "[resourceGroup().location]",
-            "sku": {
-              "name": "Standard_LRS",
-              "tier": "Standard"
-            },
-            "properties": {
-              "creationData": {
-                "createOption": "Empty"
-              },
-              "diskSizeGB": "512"
-            }
           }
         },
         "resources": [
@@ -281,17 +244,16 @@
               "displayName": "testscript"
             },
             "properties": {
-              "publisher": "Microsoft.OSTCExtensions",
-              "type": "CustomScriptForLinux",
-              "typeHandlerVersion": "1.4",
+              "publisher": "Microsoft.Azure.Extensions",
+              "type": "CustomScript",
+              "typeHandlerVersion": "2.0",
               "autoUpgradeMinorVersion": true,
               "settings": {
                 "fileUris": [
                   "https://raw.githubusercontent.com/rsponholtz/scriptsample/master/CustomScripts/testscript.sh"
                 ],
-                "commandToExecute": "[concat('sh ', 'testscript.sh')]"
-              },
-              "protectedsettings": []
+                "commandToExecute": "sh testscript.sh"
+              }
             }
           }
         ]
@@ -397,16 +359,16 @@
         ],
         "properties": {
           "sku": {
-            "name": "[parameters('skuSize')]",
-            "tier": "[parameters('tier')]",
-            "capacity": "[parameters('capacity')]"
+            "name": "Standard_Small",
+            "tier": "Standard",
+            "capacity": "2"
           },
           "gatewayIPConfigurations": [
             {
               "name": "appGatewayIpConfig",
               "properties": {
                 "subnet": {
-                  "id": "[variables('jumpboxvmSubnetRef')]"
+                  "id": "[variables('gatewaySubnetRef')]"
                 }
               }
             }
@@ -433,6 +395,11 @@
             {
               "name": "appGatewayBackendPool",
               "properties": {
+                "backendIPConfigurations": [
+                  {
+                      "id": "[concat(resourceId('Microsoft.Network/networkInterfaces', variables('testvmNicName')), '/ipConfigurations/ipconfig1')]"
+                  }
+                ],
                 "BackendAddresses": []
               }
             }
@@ -483,7 +450,7 @@
         }
       },
       {
-        "apiVersion": "2017-08-01",
+        "apiVersion": "2017-10-01",
         "type": "Microsoft.Network/publicIPAddresses",
         "name": "[parameters('publicIpAddressName')]",
         "location": "[resourceGroup().location]",
@@ -494,3 +461,4 @@
     ],
     "outputs": {}
   }
+
