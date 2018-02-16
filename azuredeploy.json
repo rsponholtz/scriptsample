@@ -287,9 +287,9 @@
               "autoUpgradeMinorVersion": true,
               "settings": {
                 "fileUris": [
-                  "[concat(parameters('_artifactsLocation'), '/', variables('testscriptScriptFolder'), '/', variables('testscriptScriptFileName'), parameters('_artifactsLocationSasToken'))]"
+                  "https://raw.githubusercontent.com/rsponholtz/scriptsample/master/CustomScripts/testscript.sh"
                 ],
-                "commandToExecute": "[concat('sh ', variables('testscriptScriptFileName'))]"
+                "commandToExecute": "[concat('sh ', 'testscript.sh')]"
               },
               "protectedsettings": []
             }
